@@ -26,3 +26,5 @@ test.describe('Search Functionality', () => {
     await expect(page.locator('text=TV Shows')).toBeVisible();
   });
 });
+
+

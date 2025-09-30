@@ -51,3 +51,5 @@ test.describe('Homepage', () => {
     await expect(page.locator('text=Popular Movies')).toBeVisible();
   });
 });
+
+
