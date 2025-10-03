@@ -1,5 +1,6 @@
 "use client";
 
+import { SignedIn, SignedOut, SignInButton } from '@clerk/nextjs';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWatchlist } from '@/hooks/useWatchlist';
 import { Button } from '@/components/ui/button';
@@ -23,15 +24,16 @@ export default function WatchlistPage() {
     );
   }
 
+  // Clerk guards
   if (!user) {
     return (
       <main className="relative bg-gradient-to-t from-gray-900/10 to-[#030303] min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-4xl font-bold text-white mb-4">Sign In Required</h1>
-          <p className="text-gray-300 text-lg mb-8">Please sign in to view your watchlist</p>
-          <Button asChild className="bg-red-600 hover:bg-red-700">
-            <Link href="/">Go Home</Link>
-          </Button>
+          <p className="text-gray-300 text-lg mb-6">Please sign in to view your watchlist</p>
+          <SignInButton mode="modal">
+            <Button className="bg-red-600 hover:bg-red-700">Sign in</Button>
+          </SignInButton>
         </div>
       </main>
     );

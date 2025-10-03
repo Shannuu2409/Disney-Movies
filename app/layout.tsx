@@ -3,7 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/Header";
 import { ThemeProvider } from "@/components/ThemeProvider";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { ClerkProvider } from '@clerk/nextjs';
 import GenreDropdown from "@/components/GenreDropdown";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
@@ -69,10 +69,10 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <AuthProvider>
+            <ClerkProvider>
               <Header genreDropdown={<GenreDropdown />} />
               {children}
-            </AuthProvider>
+            </ClerkProvider>
           </ThemeProvider>
         </ErrorBoundary>
       </body>

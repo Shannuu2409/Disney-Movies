@@ -22,12 +22,7 @@ export function useWatchlist() {
     
     setLoading(true);
     try {
-      const token = await user.getIdToken();
-      const response = await fetch('/api/watchlist', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+      const response = await fetch('/api/watchlist', { credentials: 'include' });
       if (response.ok) {
         const data = await response.json();
         setWatchlist(data);
@@ -50,13 +45,12 @@ export function useWatchlist() {
     if (!user) return false;
 
     try {
-      const token = await user.getIdToken();
       const response = await fetch('/api/watchlist', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify({
           contentId,
           contentType,
@@ -70,6 +64,9 @@ export function useWatchlist() {
       if (response.ok) {
         await fetchWatchlist();
         return true;
+      } else {
+        const text = await response.text();
+        console.error('Add watchlist failed:', response.status, text);
       }
     } catch (error) {
       console.error('Error adding to watchlist:', error);
@@ -81,12 +78,9 @@ export function useWatchlist() {
     if (!user) return false;
 
     try {
-      const token = await user.getIdToken();
       const response = await fetch(`/api/watchlist?contentId=${contentId}&contentType=${contentType}`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
+        credentials: 'include',
       });
 
       if (response.ok) {

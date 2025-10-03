@@ -1,71 +1,38 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut as firebaseSignOut } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
-
-interface AuthContextType {
-  user: User | null;
-  loading: boolean;
-  signInWithGoogle: () => Promise<void>;
-  signOut: () => Promise<void>;
-}
-
-const AuthContext = createContext<AuthContextType>({
-  user: null,
-  loading: true,
-  signInWithGoogle: async () => {},
-  signOut: async () => {},
-});
+import React from 'react';
+import { ClerkProvider, useUser } from '@clerk/nextjs';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  const signInWithGoogle = async () => {
-    try {
-      const provider = new GoogleAuthProvider(); 
-      await signInWithPopup(auth, provider);
-    } catch (error) {
-      console.error('Error signing in with Google:', error);
-    }
-  };
-
-  const signOut = async () => {
-    try {
-      await firebaseSignOut(auth);
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
-
-  const value = {
-    user,
-    loading,
-    signInWithGoogle,
-    signOut,
-  };
-
   return (
-    <AuthContext.Provider value={value}>
+    <ClerkProvider>
       {children}
-    </AuthContext.Provider>
+    </ClerkProvider>
   );
 }
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
+export function useAuth() {
+  const { isLoaded, isSignedIn, user } = useUser();
+
+  // Adapt Clerk's user to the minimal interface used in the app
+  const adaptedUser = React.useMemo(() => {
+    if (!user) return null as unknown as { getIdToken: () => Promise<string> } | null;
+
+    return {
+      // Provide Firebase-like API expected by hooks: getIdToken()
+      async getIdToken() {
+        const token = await user.getToken();
+        return token ?? '';
+      },
+      id: user.id,
+      emailAddresses: user.emailAddresses,
+      fullName: user.fullName,
+      imageUrl: user.imageUrl,
+    } as unknown as { getIdToken: () => Promise<string> } & typeof user;
+  }, [user]);
+
+  return {
+    user: isSignedIn ? (adaptedUser as any) : null,
+    loading: !isLoaded,
+  } as const;
+}

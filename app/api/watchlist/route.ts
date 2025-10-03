@@ -1,38 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDatabase } from "@/lib/mongodb";
-import { getAuth } from "firebase-admin/auth";
-import { initializeApp, getApps, cert } from "firebase-admin/app";
+import { auth } from "@clerk/nextjs/server";
 
-// Initialize Firebase Admin
-if (!getApps().length) {
-  initializeApp({
-    credential: cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-    }),
-  });
-}
-
-async function verifyToken(request: NextRequest) {
-  const authHeader = request.headers.get("authorization");
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return null;
-  }
-
-  const token = authHeader.split("Bearer ")[1];
-  try {
-    const decodedToken = await getAuth().verifyIdToken(token);
-    return decodedToken.uid;
-  } catch (error) {
-    console.error("Error verifying token:", error);
-    return null;
-  }
-}
+export const runtime = 'nodejs';
 
 export async function GET(request: NextRequest) {
   try {
-    const userId = await verifyToken(request);
+    const { userId } = auth();
     
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -53,13 +27,27 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const userId = await verifyToken(request);
-    
+    const { userId } = auth();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { contentId, contentType, title, posterPath, releaseDate, voteAverage } = await request.json();
+    let body: any;
+    try {
+      body = await request.json();
+    } catch (e) {
+      return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    }
+
+    const { contentId, contentType, title, posterPath, releaseDate, voteAverage } = body ?? {};
+
+    if (
+      typeof contentId !== 'number' ||
+      !contentType ||
+      typeof title !== 'string'
+    ) {
+      return NextResponse.json({ error: "Missing or invalid fields" }, { status: 400 });
+    }
 
     const db = await getDatabase();
     const watchlistItem = {
@@ -91,14 +79,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(responseItem);
   } catch (error) {
     console.error("Error adding to watchlist:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Internal server error';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
 export async function DELETE(request: NextRequest) {
   try {
-    const userId = await verifyToken(request);
-    
+    const { userId } = auth();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

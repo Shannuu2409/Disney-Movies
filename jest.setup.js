@@ -1,4 +1,4 @@
-import '@testing-library/jest-dom'
+require('@testing-library/jest-dom')
 
 // Mock Next.js router
 jest.mock('next/navigation', () => ({
@@ -21,29 +21,10 @@ jest.mock('next/navigation', () => ({
 }))
 
 // Mock Next.js Image component
-jest.mock('next/image', () => ({
-  __esModule: true,
-  default: (props) => {
-    // eslint-disable-next-line @next/next/no-img-element
-    return <img {...props} />
-  },
-}))
-
-// Mock Firebase
-jest.mock('firebase/auth', () => ({
-  getAuth: jest.fn(),
-  onAuthStateChanged: jest.fn(),
-  signInWithPopup: jest.fn(),
-  signOut: jest.fn(),
-  GoogleAuthProvider: jest.fn(),
-}))
-
-// Mock environment variables
-process.env.NEXT_PUBLIC_FIREBASE_API_KEY = 'test-api-key'
-process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN = 'test.firebaseapp.com'
-process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID = 'test-project'
-process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET = 'test.appspot.com'
-process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID = '123456789'
-process.env.NEXT_PUBLIC_FIREBASE_APP_ID = '1:123456789:web:test'
-
-
+jest.mock('next/image', () => {
+  const React = require('react')
+  return {
+    __esModule: true,
+    default: (props) => React.createElement('img', props)
+  }
+})
